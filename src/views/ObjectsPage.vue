@@ -35,7 +35,7 @@
       
       <!-- Backdrop for mobile interactions -->
       <Teleport to="body">
-        <div v-if="showAllTags || isSearchExpanded" class="page-backdrop" @click="closeBackdrop"></div>
+        <div v-if="showAllTags || (isHoveringSearch && searchQuery.length === 0)" class="page-backdrop" @click="closeBackdrop"></div>
       </Teleport>
 
       <!-- fixed tags -->
