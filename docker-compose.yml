@@ -1,17 +1,18 @@
 services:
   backend:
-    image: ghcr.io/7artix/artilens-backend:latest
+    image: ghcr.io/artixzhang/artilens-backend:latest
     container_name: artilens-backend
     restart: always
     volumes:
       - ${DATA_PATH:-./data}:/app/data
     environment:
       - PORT=3000
+      - JWT_SECRET=${JWT_SECRET}
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
   frontend:
-    image: ghcr.io/7artix/artilens-frontend:latest
+    image: ghcr.io/artixzhang/artilens-frontend:latest
     container_name: artilens-frontend
     restart: always
     ports:
