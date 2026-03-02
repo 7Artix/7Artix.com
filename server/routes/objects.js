@@ -130,6 +130,10 @@ router.post('/create', verifyToken, (req, res) => {
         fs.mkdirSync(path.join(dir, 'assets'), { recursive: true });
         fs.mkdirSync(path.join(dir, 'assets', 'media'), { recursive: true });
         fs.mkdirSync(path.join(dir, 'assets', 'file'), { recursive: true });
+        
+        // [NEW] 初始化 stats.yaml
+        fs.writeFileSync(path.join(dir, 'stats.yaml'), yaml.dump({ views: 0 }));
+        
         fs.writeFileSync(path.join(dir, 'config.yaml'), yaml.dump(initialConfig));
         res.json({ success: true, data: initialConfig });
     } catch (e) {
@@ -183,6 +187,9 @@ router.post('/update', verifyToken, (req, res) => {
         delete config.owner_id;
         delete config.shared_with;
         delete config.author;
+        
+        // [NEW] 确保 views 字段永远不会写入 config.yaml
+        delete config.views; 
 
         fs.writeFileSync(configPath, yaml.dump(config));
         res.json({ success: true });
@@ -220,6 +227,7 @@ router.get('/:id', verifyTokenOptional, async (req, res) => {
 
         const dirPath = path.join(OBJECTS_PATH, id);
         const configPath = path.join(dirPath, 'config.yaml');
+        const statsPath = path.join(dirPath, 'stats.yaml'); // [NEW]
         const mdPath = path.join(dirPath, 'content.md');
 
         if (!fs.existsSync(configPath)) {
@@ -238,12 +246,16 @@ router.get('/:id', verifyTokenOptional, async (req, res) => {
             return res.status(403).json({ success: false, message: "Permission denied" });
         }
 
-        // Increment View Count
-        config.views = (config.views || 0) + 1;
+        // [MODIFIED] Increment View Count in stats.yaml
+        let stats = { views: 0 };
         try {
-            fs.writeFileSync(configPath, yaml.dump(config));
+            if (fs.existsSync(statsPath)) {
+                stats = yaml.load(fs.readFileSync(statsPath, 'utf8')) || { views: 0 };
+            }
+            stats.views = (stats.views || 0) + 1;
+            fs.writeFileSync(statsPath, yaml.dump(stats));
         } catch (err) {
-            console.error(`[Objects] Failed to update views for ${id}:`, err);
+            console.error(`[Objects] Failed to update views stats for ${id}:`, err);
         }
 
         // 读取 Markdown
@@ -261,6 +273,7 @@ router.get('/:id', verifyTokenOptional, async (req, res) => {
         // 返回给前端
         res.json({
             ...config,
+            ...stats, // [NEW] 合并动态数据
             author: authorName,
             markdown,
             assetBase: `/api/static/objects/${id}/` 

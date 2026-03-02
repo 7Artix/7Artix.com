@@ -66,7 +66,10 @@ export const getAllObjectsFromFiles = () => {
         );
 
         return folders.map(folderName => {
-            const configPath = path.join(OBJECTS_PATH, folderName, 'config.yaml');
+            const dirPath = path.join(OBJECTS_PATH, folderName);
+            const configPath = path.join(dirPath, 'config.yaml');
+            const statsPath = path.join(dirPath, 'stats.yaml');
+
             let existingConfig = {};
 
             if (fs.existsSync(configPath)) {
@@ -75,6 +78,15 @@ export const getAllObjectsFromFiles = () => {
                 } catch (e) {
                     console.error(`[Utils] Broken YAML in ${folderName}, resetting to default.`);
                     existingConfig = {};
+                }
+            }
+
+            let stats = { views: 0 };
+            if (fs.existsSync(statsPath)) {
+                try {
+                    stats = yaml.load(fs.readFileSync(statsPath, 'utf8')) || { views: 0 };
+                } catch (e) {
+                    console.error(`[Utils] Broken Stats YAML in ${folderName}`);
                 }
             }
 
@@ -116,17 +128,13 @@ export const getAllObjectsFromFiles = () => {
                 visibility: existingConfig.visibility || "public",
                 user: cleanedUserPermissions,
                 description: existingConfig.description || "",
-                views: existingConfig.views || 0, // Add views field
-                // Assets Attributes
                 basePath: `/api/static/objects/${folderName}/`, 
                 coverImage: existingConfig.coverImage || "", 
                 cardImages: existingConfig.cardImages || [],
-                // Expired tags clean-up
                 tags: (existingConfig.tags || []).filter(tid => globalTagIds.includes(tid))
             };
 
-            // Add virtual author field for frontend
-            const finalObject = { ...repairedConfig, author: authorName };
+            const finalObject = { ...repairedConfig, ...stats, author: authorName };
 
             const isMissingConfig = !fs.existsSync(configPath);
             const isDifferentConfig = JSON.stringify(existingConfig) !== JSON.stringify(repairedConfig);
@@ -134,6 +142,10 @@ export const getAllObjectsFromFiles = () => {
             if (isMissingConfig || isDifferentConfig) {
                 console.log(`[Structure-Healing] ${isMissingConfig ? 'Creating' : 'Repairing'} config for: ${folderName}`);
                 fs.writeFileSync(configPath, yaml.dump(repairedConfig));
+            }
+            
+            if (!fs.existsSync(statsPath)) {
+                fs.writeFileSync(statsPath, yaml.dump({ views: 0 }));
             }
 
             if (!fs.existsSync(path.join(OBJECTS_PATH, folderName, 'assets', 'media'))) {

@@ -8,8 +8,37 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
 import NavBar from './components/NavBar.vue'
 import '@fontsource-variable/noto-sans-sc'
+import yaml from 'js-yaml'
+
+const fetchSiteInfo = async () => {
+  try {
+    const response = await fetch('/api/static/site/info.yaml')
+    const text = await response.text()
+    const data = yaml.load(text)
+    
+    if (data.site_name) {
+      document.title = data.site_name
+    }
+    
+    if (data.site_icon) {
+      // 同时更新标准图标和 Apple 图标
+      const iconLink = document.querySelector('link[rel="icon"]')
+      const appleIconLink = document.querySelector('link[rel="apple-touch-icon"]')
+      
+      if (iconLink) iconLink.setAttribute('href', data.site_icon)
+      if (appleIconLink) appleIconLink.setAttribute('href', data.site_icon)
+    }
+  } catch (error) {
+    console.error('Error fetching site info:', error)
+  }
+}
+
+onMounted(() => {
+  fetchSiteInfo()
+})
 
 const viewportMeta = document.querySelector('meta[name="viewport"]')
 const viewportContent = 'width=720, user-scalable=yes'

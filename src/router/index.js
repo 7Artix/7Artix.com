@@ -62,7 +62,7 @@ const routes = [
     component: SearchPage
   },
   { path: '/me',
-    name: 'Artix Zhang',
+    name: 'Me',
     component: MePage
   },
 ]
