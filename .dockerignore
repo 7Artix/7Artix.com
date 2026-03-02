@@ -1,5 +1,7 @@
 node_modules
 dist
-data
+data_template
 .git
+.github
+.vscode
 .DS_Store

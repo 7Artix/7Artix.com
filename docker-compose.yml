@@ -1,20 +1,30 @@
 services:
   backend:
-    # We will use image names instead of 'build' for remote deployment
-    image: artixzhang/7artix-backend:latest
-    container_name: 7artix-backend
+    image: ghcr.io/7artix/artilens-backend:latest
+    container_name: artilens-backend
     restart: always
     volumes:
-      # CRITICAL: Maps the host folder './data' to container '/app/data'
-      - ${HOST_DATA_PATH:-./data}:/app/data
+      - ${DATA_PATH:-./data}:/app/data
     environment:
       - PORT=3000
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
   frontend:
-    image: artixzhang/7artix-frontend:latest
-    container_name: 7artix-frontend
+    image: ghcr.io/7artix/artilens-frontend:latest
+    container_name: artilens-frontend
     restart: always
     ports:
-      - "80:80" # Maps Server Port 80 to Container Port 80
+      - "${APP_PORT:-5555}:80"
     depends_on:
       - backend
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 60 --cleanup --label-enable
