@@ -143,7 +143,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import ObjectProfile from '../components/ObjectProfile.vue' 
 import PageFooter from '../components/PageFooter.vue'
@@ -171,6 +171,7 @@ const tagsDrawerRef = ref(null)
 const searchWrapperRef = ref(null)
 const sortControlRef = ref(null)
 const isMobile = ref(false)
+const isInitializing = ref(true)
 
 const isSearchExpanded = computed(() => isHoveringSearch.value || searchQuery.value.length > 0)
 const showSearchResults = computed(() => isHoveringSearch.value && searchQuery.value.length > 0 && tagSuggestions.value.length > 0)
@@ -232,20 +233,64 @@ const init = async () => {
   allObjects.value = await oRes.json()
   allTags.value = await tRes.json()
   pinnedIds.value = await pRes.json()
+  
   applyUrlParams()
+
+  // 还原滚动位置
+  nextTick(() => {
+    const savedScroll = sessionStorage.getItem('objects_page_scroll')
+    if (savedScroll) {
+      window.scrollTo({ top: parseInt(savedScroll), behavior: 'auto' })
+    }
+  })
+
+  // Wait for watchers to ignore the initialization changes
+  await nextTick()
+  isInitializing.value = false
 }
 
 const applyUrlParams = () => {
+  // 1. Tags
   const tagParam = route.query.tag
-  if (tagParam && allTags.value.length > 0) {
-    const targetTag = allTags.value.find(t => t.name.toLowerCase() === tagParam.toLowerCase())
-    if (targetTag) selectedTags.value = [targetTag.id]
+  if (tagParam) {
+    const tagNames = tagParam.split(',')
+    selectedTags.value = allTags.value
+      .filter(t => tagNames.includes(t.name))
+      .map(t => t.id)
   } else {
     selectedTags.value = []
   }
+
+  // 2. Search Query
+  if (route.query.q) searchQuery.value = route.query.q
+
+  // 3. Sort State
+  if (route.query.sort) {
+    const [field, order] = route.query.sort.split(':')
+    sortState.value = { field, order }
+  }
 }
 
-watch(() => route.query.tag, applyUrlParams)
+// 监听状态变化并同步到 URL
+watch([searchQuery, selectedTags, sortState], () => {
+  if (isInitializing.value) return
+
+  const query = {}
+  if (searchQuery.value) query.q = searchQuery.value
+  if (selectedTags.value.length > 0) {
+    query.tag = selectedTags.value.map(id => getTagName(id)).filter(Boolean).join(',')
+  }
+  if (sortState.value.field !== 'date' || sortState.value.order !== 'desc') {
+    query.sort = `${sortState.value.field}:${sortState.value.order}`
+  }
+  
+  router.replace({ query })
+}, { deep: true })
+
+// 离开页面前记录滚动位置
+onBeforeUnmount(() => {
+  sessionStorage.setItem('objects_page_scroll', window.scrollY)
+})
 
 const checkMobile = () => {
     isMobile.value = window.innerWidth <= 768 || ('ontouchstart' in window)

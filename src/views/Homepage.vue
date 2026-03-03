@@ -117,7 +117,7 @@ let isHovering = false
 let idleTimer = null
 let lastTouchY = 0
 let isModalOpen = false
-const isPaused = ref(false)
+const isPaused = ref(sessionStorage.getItem('homepage_paused') === 'true')
 
 // Modal 状态
 const showModal = ref(false)
@@ -349,6 +349,7 @@ const resetIdleTimer = () => {
 
 const togglePause = () => {
   isPaused.value = !isPaused.value
+  sessionStorage.setItem('homepage_paused', isPaused.value)
 }
 
 const handleCardClick = (card) => {

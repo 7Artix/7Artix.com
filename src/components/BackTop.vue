@@ -92,8 +92,8 @@ onUnmounted(() => {
   
   -webkit-mask-position: center;
   mask-position: center;
-  transform: translate(0px, -1px);
-  -webkit-transform: translate(0px, -1px);
+  -webkit-transform: translateY(-1px);
+  transform: translateY(-1px);
   
   flex-shrink: 0;
 }

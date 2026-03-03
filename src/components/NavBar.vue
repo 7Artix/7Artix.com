@@ -10,18 +10,17 @@
                     <li 
                         v-for="item in displayMenuItems" 
                         :key="item.path" 
-                        @click="handleItemClick(item)"
                         @mouseenter="handleMouseEnter(item)"
                         :class="{ 'active-title': hoveredItem === item }"
                     >
-                        <div class="nav-item-top">
+                        <div class="nav-item-top" @click="handleItemClick(item)">
                             <!-- Case 1: Logo -->
-                            <div v-if="item.label === 'logo'" class="nav-search-logo">
+                            <router-link v-if="item.label === 'logo'" :to="item.path" class="nav-search-logo" @click.native="closeMenu">
                                 {{ item.name }}
-                            </div>
+                            </router-link>
 
                             <!-- Case 2: Has Icon -->
-                            <template v-else-if="item.icon">
+                            <router-link v-else-if="item.icon" :to="item.path" class="nav-icon-link" @click.native="closeMenu">
                                 <img 
                                     v-if="item.label === 'account'" 
                                     :src="item.icon" 
@@ -34,10 +33,10 @@
                                     :alt="item.name"
                                     class="nav-icon"
                                 />
-                            </template>
+                            </router-link>
 
                             <!-- Case 3: Normal Title -->
-                            <span v-else class="nav-title">{{ item.name }}</span>
+                            <router-link v-else :to="item.path" class="nav-title" @click.native="closeMenu">{{ item.name }}</router-link>
                         </div>
                     </li>
                 </ul>
@@ -50,8 +49,10 @@
                         <div class="dropdown-column">
                             <span v-if="hoveredItem.label === 'object'" class="column-label">{{ `Explore ${hoveredItem.name}` }}</span>
                             <ul>
-                                <li v-for="child in hoveredItem.children" :key="child.path" @click.stop="navigateTo(child.path)">
-                                    {{ child.name }}
+                                <li v-for="child in hoveredItem.children" :key="child.path" class="dropdown-li-link-wrapper">
+                                    <router-link :to="child.path" class="dropdown-link" @click.native="closeMenu">
+                                        {{ child.name }}
+                                    </router-link>
                                 </li>
                             </ul>
                         </div>
@@ -247,6 +248,8 @@ watch([isHovered, hoveredItem], async () => {
     overflow: hidden;
     display: flex;
     justify-content: center;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .navbar-wrapper {
@@ -328,7 +331,7 @@ watch([isHovered, hoveredItem], async () => {
 }
 .nav-links li { height: v-bind(NAV_HEIGHT); display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
 .nav-item-top { height: v-bind(NAV_HEIGHT); display: flex; align-items: center; justify-content: center; white-space: nowrap; }
-.nav-title { font-size: 12px; color: #333333; line-height: 1; transition: font-weight 0.2s; }
+.nav-title { font-size: 12px; color: #333333; line-height: 1; transition: font-weight 0.2s; text-decoration: none; }
 
 .active-title .nav-title {
     color: #000000;
@@ -340,7 +343,8 @@ watch([isHovered, hoveredItem], async () => {
     display: block;
 }
 
-.nav-search-logo { cursor: pointer; font-size: 12px; font-weight: 700; }
+.nav-search-logo { cursor: pointer; font-size: 12px; font-weight: 700; text-decoration: none; color: inherit; }
+.dropdown-link { color: inherit; text-decoration: none; display: block; width: 100%; }
 
 .nav-avatar {
     cursor: pointer;
@@ -369,4 +373,6 @@ watch([isHovered, hoveredItem], async () => {
     visibility: hidden;
     pointer-events: none;
 }
+
+.nav-icon-link { display: flex; align-items: center; justify-content: center; text-decoration: none; color: inherit; }
 </style>

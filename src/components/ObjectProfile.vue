@@ -1,6 +1,6 @@
 <template>
   <div class="object-card">
-    <div class="card-hero" @click="$emit('view', obj.id)">
+    <router-link :to="`/object/${obj.id}`" class="card-hero">
       <div class="hero-img" :style="{ backgroundImage: `url(${obj.basePath + obj.coverImage})` }"></div>
       <div class="hero-overlay">
         <p class="description">{{ obj.description }}</p>
@@ -23,23 +23,30 @@
         <span>Pinned</span>
       </div>
 
-      <div v-if="mode === 'admin'" class="admin-traffic-lights" @click.stop>
-        <button class="traffic-btn pin" :class="{ active: isPinned }" @click="$emit('toggle-pin', obj.id)"></button>
-        <button class="traffic-btn edit" @click="$emit('edit', obj)"></button>
-        <button class="traffic-btn close" @click="$emit('delete', obj.id)">
-          <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-        </button>
+      <!-- View Counter (Bottom Left of Image Area - Admin Only) -->
+      <div v-if="mode === 'admin' && obj.views !== undefined" class="view-counter">
+        <svg viewBox="0 0 24 24"><path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" /></svg>
+        <span>{{ obj.views }}</span>
       </div>
+    </router-link>
 
-      <!-- Admin View Count -->
-      <div v-if="mode === 'admin'" class="view-counter">
-        <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-        <span>{{ obj.views || 0 }}</span>
-      </div>
+    <!-- Admin Controls -->
+    <div v-if="mode === 'admin'" class="admin-traffic-lights">
+      <button class="traffic-btn pin" :class="{ active: isPinned }" @click.stop="$emit('toggle-pin', obj.id)">
+        <svg viewBox="0 0 24 24"><path d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z" /></svg>
+      </button>
+      <button class="traffic-btn edit" @click.stop="$emit('edit', obj)">
+        <svg viewBox="0 0 24 24"><path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" /></svg>
+      </button>
+      <button class="traffic-btn close" @click.stop="$emit('delete', obj.id)">
+        <svg viewBox="0 0 24 24"><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
+      </button>
     </div>
 
     <div class="card-footer">
-      <h3 class="title scroll-fade">{{ obj.name }}</h3>
+      <router-link :to="`/object/${obj.id}`" class="title-link">
+        <h3 class="title scroll-fade">{{ obj.name }}</h3>
+      </router-link>
       <div class="meta-bottom">
         <div class="tag-list scroll-fade">
           <!-- 修改部分: 使用 MiniTag 组件 -->
@@ -79,8 +86,8 @@ const getTypeClass = (type) => {
 </script>
 
 <style scoped>
-.object-card { background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.05); transition: box-shadow 0.4s; position: relative; z-index: 1000;}
-.card-hero { position: relative; aspect-ratio: 1 / 1; cursor: pointer; overflow: hidden; }
+.object-card { background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.05); transition: box-shadow 0.4s; position: relative; z-index: 1000; user-select: none; -webkit-user-select: none; }
+.card-hero { position: relative; aspect-ratio: 1 / 1; cursor: pointer; overflow: hidden; display: block; text-decoration: none; color: inherit; }
 .hero-img { width: 100%; height: 100%; background-size: cover; background-position: center; transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1); }
 .hero-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; padding: 30px; opacity: 0; transition: 0.4s; backdrop-filter: blur(8px); }
 @media (hover: hover) {
@@ -165,4 +172,5 @@ const getTypeClass = (type) => {
 }
 
 .date { font-size: 12px; color: #86868b; flex-shrink: 0; }
+.title-link { text-decoration: none; color: inherit; display: block; }
 </style>
