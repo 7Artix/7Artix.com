@@ -12,13 +12,14 @@ import rateLimit from 'express-rate-limit';
 
 const app = express();
 
+// Trust the proxy (Cloudflare Tunnel) to correctly identify HTTPS
+app.set('trust proxy', 1);
+
 // --- Dynamic Sitemap & Robots ---
 
 // Helper to get dynamic base URL
 const getBaseUrl = (req) => {
-    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-    const host = req.get('host');
-    return `${protocol}://${host}`;
+    return `${req.protocol}://${req.get('host')}`;
 };
 
 app.get('/sitemap.xml', (req, res) => {
