@@ -144,6 +144,7 @@ watch(renderedMarkdown, (newContent) => {
 .markdown-body {
     background: transparent;
     font-family: 'Noto Sans SC Variable', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif !important;
+    text-align: justify;
 }
 
 :deep(.code-wrapper) {
@@ -195,11 +196,6 @@ watch(renderedMarkdown, (newContent) => {
 :deep(.katex) { padding-right: 0.15em !important; padding-left: 0.05em !important; line-height: 1.2; }
 :deep(.katex-display) { padding: 1em 0.5em !important; margin: 1em 0; overflow-x: auto; overflow-y: hidden; }
 :deep(.katex-html) { overflow: visible !important; }
-
-:deep(h2) {
-    font-size: 1.5em;
-    border-bottom: none;
-}
 
 :deep(h2) {
     font-size: 1.5em;
