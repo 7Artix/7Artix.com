@@ -33,7 +33,6 @@
               <!-- 图片：加载前透明，加载后淡入 -->
               <img 
                 :src="card.imagePath" 
-                loading="lazy" 
                 class="card-img" 
                 :class="{ 'img-visible': card.loaded }"
                 @load="card.loaded = true"
@@ -114,7 +113,7 @@ let currentSpeed = BASE_SPEED // 当前实际速度
 let targetSpeed = BASE_SPEED // 目标速度（用于 lerp 过渡）
 let scrollVelocity = 0 // 滚轮带来的额外速度
 let isHovering = false
-let idleTimer = null
+let hoverEndTime = 0
 let lastTouchY = 0
 let isModalOpen = false
 const isPaused = ref(sessionStorage.getItem('homepage_paused') === 'true')
@@ -213,9 +212,14 @@ const generateCards = () => {
   })
 
   // 6. 构建最终的 Columns 数据，每列包含三份数据用于无限滚动
+  // [修复] 必须浅拷贝对象，否则 A-B-C 三段克隆体共享同一个 loaded 状态，导致图片状态互相干扰
   columns.value = cols.map(colData => ({
     rawData: colData,
-    tripledData: [...colData, ...colData, ...colData] // A-B-C 结构
+    tripledData: [
+      ...colData.map(c => ({ ...c })),
+      ...colData.map(c => ({ ...c })),
+      ...colData.map(c => ({ ...c }))
+    ]
   }))
 
   // 初始化偏移量
@@ -248,6 +252,10 @@ const initResizeObserver = () => {
 
 // --- 动画循环 ---
 const updatePhysics = () => {
+  if (isHovering && performance.now() > hoverEndTime) {
+    isHovering = false
+  }
+
   // 1. 处理目标速度
   let target = (isModalOpen || isPaused.value) ? 0 : (isHovering ? HOVER_SPEED : BASE_SPEED)
   
@@ -263,7 +271,8 @@ const updatePhysics = () => {
   // [优化] 如果速度极小且没有滚轮输入，可以暂停计算（可选，这里为了流畅保持运行）
   
   // 4. 更新每一列
-  columns.value.forEach((col, index) => {
+  const strips = stripRefs.value
+  for (let index = 0; index < columnCount.value; index++) {
     let direction = index % 2 === 0 ? 1 : -1
     let moveStep = (currentSpeed * direction) + scrollVelocity
 
@@ -285,11 +294,11 @@ const updatePhysics = () => {
     }
 
     // [优化] 直接操作 DOM style，跳过 Vue Diff
-    const el = stripRefs.value[index]
+    const el = strips[index]
     if (el) {
       el.style.transform = `translate3d(0, ${offsets[index]}px, 0)`
     }
-  })
+  }
 
   animationFrameId = requestAnimationFrame(updatePhysics)
 }
@@ -336,15 +345,12 @@ const handleTouchMove = (e) => {
 
 const handleMouseMove = () => {
   if (isModalOpen) return
-  isHovering = true
   resetIdleTimer()
 }
 
 const resetIdleTimer = () => {
-  if (idleTimer) clearTimeout(idleTimer)
-  idleTimer = setTimeout(() => {
-    isHovering = false
-  }, 1500)
+  hoverEndTime = performance.now() + 1500
+  isHovering = true
 }
 
 const togglePause = () => {
@@ -381,7 +387,6 @@ onUnmounted(() => {
   if (animationFrameId) cancelAnimationFrame(animationFrameId)
   if (resizeObserver) resizeObserver.disconnect() // 清理 Observer
   window.removeEventListener('resize', generateCards)
-  if (idleTimer) clearTimeout(idleTimer)
 })
 </script>
 
@@ -404,7 +409,6 @@ onUnmounted(() => {
   padding: 0 20px;
   justify-content: center;
   transition: filter 0.5s ease;
-  will-change: filter;
 }
 
 .columns-wrapper.blur-bg {
@@ -438,7 +442,6 @@ onUnmounted(() => {
   box-shadow: 0 0px 15px rgba(0,0,0,0.05);
   cursor: pointer;
   transition: transform 0.3s ease;
-  transform: translateZ(0); /* 开启硬件加速 */
 }
 
 /* 鼠标悬停在卡片上时的效果 */
@@ -489,7 +492,6 @@ onUnmounted(() => {
   display: block;
   transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.4s ease;
   opacity: 0; /* 默认不可见 */
-  will-change: transform, opacity;
 }
 
 .card-img.img-visible {

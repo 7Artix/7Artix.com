@@ -197,6 +197,11 @@ watch(renderedMarkdown, (newContent) => {
 :deep(.katex-display) { padding: 1em 0.5em !important; margin: 1em 0; overflow-x: auto; overflow-y: hidden; }
 :deep(.katex-html) { overflow: visible !important; }
 
+:deep(h1), :deep(h2), :deep(h3), :deep(h4), :deep(h5), :deep(h6) {
+    text-align: left;
+    line-height: 1.5;
+}
+
 :deep(h2) {
     font-size: 1.5em;
     border-bottom: none;

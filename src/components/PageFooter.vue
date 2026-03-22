@@ -1,6 +1,6 @@
 <template>
     <footer class="page-footer">
-      <p>Copyright © {{ new Date().getFullYear() }} {{ siteName }}</p>
+      <p>Copyright © {{ new Date().getFullYear() }} {{ siteName }}. All rights reserved.</p>
     </footer>
 </template>
 
