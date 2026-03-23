@@ -1,4 +1,5 @@
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import { getUsers, saveUsers, hashPassword, generateID } from '../utils.js';
 import { requireAdmin } from '../auth.js';
 
@@ -13,8 +14,13 @@ router.get('/search', (req, res) => {
     const filtered = users
         .filter(u => u.username.toLowerCase().includes(q.toLowerCase()))
         .map(({ id, username }) => ({ id, username })); // Only return id and username
-    
     res.json(filtered);
+});
+
+// Check whether any user exists (for initial setup)
+router.get('/exists', (req, res) => {
+    const users = getUsers();
+    res.json({ hasUsers: users.length > 0 });
 });
 
 // List all users (Admin only)
@@ -23,15 +29,37 @@ router.get('/', requireAdmin, (req, res) => {
     res.json(users);
 });
 
-// Create a new user (Admin only)
-router.post('/', requireAdmin, (req, res) => {
+// Create a new user (Admin only, or first user setup)
+router.post('/', (req, res) => {
+    const users = getUsers();
+    const isFirstUser = users.length === 0;
+    
+    // If not the first user, require admin authentication
+    if (!isFirstUser) {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+        
+        if (!token) return res.status(401).json({ success: false, message: 'Access Denied' });
+        
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_secret');
+            if (decoded.role !== 'admin') {
+                return res.status(403).json({ success: false, message: 'Admin access required' });
+            }
+        } catch (err) {
+            return res.status(403).json({ success: false, message: 'Invalid Token' });
+        }
+    }
+    
     const { username, password, role } = req.body;
     
-    if (!username || !password || !role) {
+    if (!username || !password) {
         return res.status(400).json({ success: false, message: 'Missing fields' });
     }
 
-    const users = getUsers();
+    // For first user, force admin role
+    const userRole = isFirstUser ? 'admin' : (role === 'admin' ? 'admin' : 'user');
+    
     if (users.find(u => u.username === username)) {
         return res.status(400).json({ success: false, message: 'Username already exists' });
     }
@@ -40,7 +68,7 @@ router.post('/', requireAdmin, (req, res) => {
         id: generateID(),
         username,
         password: hashPassword(password),
-        role: role === 'admin' ? 'admin' : 'user',
+        role: userRole,
         passwordChangedAt: Math.floor(Date.now() / 1000)
     };
 
@@ -48,7 +76,7 @@ router.post('/', requireAdmin, (req, res) => {
     saveUsers(users);
 
     const { password: _, ...userWithoutPassword } = newUser;
-    res.json({ success: true, user: userWithoutPassword });
+    res.json({ success: true, user: userWithoutPassword, isFirstUser });
 });
 
 // Update user (Admin only)

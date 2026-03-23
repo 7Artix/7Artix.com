@@ -29,7 +29,7 @@ import PageFooter from '../components/PageFooter.vue'
 
 .admin-container {
   flex: 1;
-  padding: 100px 5% 50px;
+  padding: 40px 5% 50px;
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
