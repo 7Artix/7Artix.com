@@ -2,8 +2,7 @@
   <div class="login-page">
     <DynamicWave/>
     <div class="login-card">
-      <h2>System Access</h2>
-
+      <h2>Log in</h2>
       <!-- 状态 1: 未登录，显示输入框 -->
       <div v-if="!isLoggedIn" class="form-group">
         <input 
@@ -22,7 +21,7 @@
           class="login-input"
         />
         <button @click="handleLogin" :disabled="loading">
-          {{ loading ? 'Verifying...' : 'Unlock' }}
+          {{ loading ? 'Verifying...' : 'Log in' }}
         </button>
       </div>
 
@@ -88,8 +87,10 @@ const handleLogin = async () => {
       isLoggedIn.value = true
       
       if (data.user.role === 'admin') {
+        window.dispatchEvent(new Event('auth-change'))
         router.push('/admin/objects')
       } else {
+        window.dispatchEvent(new Event('auth-change'))
         router.push('/')
       }
     } else {
@@ -108,6 +109,8 @@ const goToAdmin = () => {
 
 const handleLogout = () => {
   localStorage.removeItem('authToken')
+  localStorage.removeItem('userInfo')
+  window.dispatchEvent(new Event('auth-change'))
   isLoggedIn.value = false
   password.value = ''
   error.value = ''
@@ -122,9 +125,9 @@ const handleLogout = () => {
 }
 .login-card {
   padding: 40px;
-  border-radius: 20px;
+  border-radius: 40px;
   display: flex; flex-direction: column; gap: 15px;
-  width: 300px; text-align: center;
+  width: 400px; text-align: center;
   z-index: 10;
   position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
   background: rgba(255, 255, 255, 0.4); 
@@ -133,16 +136,20 @@ const handleLogout = () => {
   border: 1px solid rgba(255,255,255,0.4);
 }
 .form-group, .action-group {
-  display: flex; flex-direction: column; gap: 15px;
+  display: flex; flex-direction: column; gap: 20px; padding-top: 20px;
 }
 .buttons {
   display: flex; gap: 10px; justify-content: center;
 }
 input {
-  padding: 12px; border: 1px solid #ddd; border-radius: 8px; outline: none;
+  padding: 12px; border: 1px solid #ddd; border-radius: 10px; outline: none;
+  font-family: inherit;
+  font-size: 12px;
 }
 button {
-  padding: 12px; background: #000; color: white; border: none; border-radius: 8px; cursor: pointer; flex: 1;
+  padding: 12px; background: #333333; color: white; border: none; border-radius: 10px; cursor: pointer; flex: 1;
+  font-family: inherit;
+  font-size: 16px;
 }
 .logout-btn {
   background: #ff4757;

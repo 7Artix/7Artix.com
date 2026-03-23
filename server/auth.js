@@ -32,6 +32,10 @@ export const verifyToken = (req, res, next) => {
             return res.status(401).json({ success: false, message: 'User no longer exists' });
         }
 
+        if (user.passwordChangedAt && decoded.iat < user.passwordChangedAt) {
+            return res.status(401).json({ success: false, message: 'Password has been changed, please login again' });
+        }
+
         req.user = decoded;
         next();
     });
@@ -56,6 +60,11 @@ export const verifyTokenOptional = (req, res, next) => {
         const users = getUsers();
         const user = users.find(u => u.id === decoded.id);
         if (!user) {
+            req.user = null;
+            return next();
+        }
+
+        if (user.passwordChangedAt && decoded.iat < user.passwordChangedAt) {
             req.user = null;
             return next();
         }

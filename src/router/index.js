@@ -78,6 +78,7 @@ router.beforeEach(async (to, from, next) => {
   if (to.path === '/logout') {
     localStorage.removeItem('authToken')
     localStorage.removeItem('userInfo')
+    window.dispatchEvent(new Event('auth-change'))
     next('/')
     return
   }
@@ -111,6 +112,7 @@ router.beforeEach(async (to, from, next) => {
         // Token 无效（过期或密码已改），清除本地存储并跳回登录页
         localStorage.removeItem('authToken')
         localStorage.removeItem('userInfo')
+        window.dispatchEvent(new Event('auth-change'))
         next('/login')
       }
     } catch (e) {
@@ -120,6 +122,26 @@ router.beforeEach(async (to, from, next) => {
     }
   } else {
     next()
+  }
+})
+
+// 5. 静默检查 Token 有效性（针对非保护路由，如直接刷新主页时同步前端状态）
+router.afterEach((to) => {
+  if (!to.meta.requiresAuth) {
+    const token = localStorage.getItem('authToken')
+    if (token) {
+      fetch('/api/check-auth', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(res => {
+        if (!res.ok) {
+          localStorage.removeItem('authToken')
+          localStorage.removeItem('userInfo')
+          window.dispatchEvent(new Event('auth-change'))
+        }
+      })
+      .catch(e => console.error('Silent auth check failed:', e))
+    }
   }
 })
 

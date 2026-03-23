@@ -40,7 +40,8 @@ router.post('/', requireAdmin, (req, res) => {
         id: generateID(),
         username,
         password: hashPassword(password),
-        role: role === 'admin' ? 'admin' : 'user'
+        role: role === 'admin' ? 'admin' : 'user',
+        passwordChangedAt: Math.floor(Date.now() / 1000)
     };
 
     users.push(newUser);
@@ -72,6 +73,7 @@ router.put('/:id', requireAdmin, (req, res) => {
 
     if (password) {
         users[userIndex].password = hashPassword(password);
+        users[userIndex].passwordChangedAt = Math.floor(Date.now() / 1000);
     }
 
     if (role) {

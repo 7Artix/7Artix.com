@@ -72,6 +72,13 @@ const fetchUsers = async () => {
   const res = await fetch('/api/users', {
     headers: { 'Authorization': `Bearer ${token}` }
   })
+  if (res.status === 401) {
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('userInfo')
+    window.dispatchEvent(new Event('auth-change'))
+    window.location.href = '/login'
+    return
+  }
   if (res.ok) {
     users.value = await res.json()
   }

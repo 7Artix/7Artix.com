@@ -195,10 +195,16 @@ onMounted(() => {
             updateAuthState()
         }
     })
+    
+    // [NEW] 监听自定义认证状态改变事件
+    window.addEventListener('auth-change', () => {
+        updateAuthState()
+    })
 })
 
 onUnmounted(() => {
     window.removeEventListener('resize', checkMobile)
+    window.removeEventListener('auth-change', updateAuthState)
 })
 
 const closeMenu = () => {
