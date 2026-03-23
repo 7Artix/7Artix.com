@@ -254,8 +254,9 @@ const applyUrlParams = () => {
   const tagParam = route.query.tag
   if (tagParam) {
     const tagNames = tagParam.split(',')
+    const tagNamesLower = tagNames.map(n => n.toLowerCase())
     selectedTags.value = allTags.value
-      .filter(t => tagNames.includes(t.name))
+      .filter(t => tagNamesLower.includes(t.name.toLowerCase()))
       .map(t => t.id)
   } else {
     selectedTags.value = []
