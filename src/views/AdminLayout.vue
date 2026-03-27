@@ -6,6 +6,7 @@
         <nav class="admin-tabs">
           <router-link to="/admin/objects" class="tab-item" active-class="active">Objects</router-link>
           <router-link to="/admin/users" class="tab-item" active-class="active">Users</router-link>
+          <router-link to="/admin/logs" class="tab-item" active-class="active">Access Logs</router-link>
         </nav>
       </div>
       <div class="admin-content">

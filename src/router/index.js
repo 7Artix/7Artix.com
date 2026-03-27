@@ -50,6 +50,11 @@ const routes = [
         path: 'users',
         name: 'AdminUsers',
         component: () => import('../views/AdminUsersPage.vue')
+      },
+      {
+        path: 'logs',
+        name: 'AdminLogs',
+        component: () => import('../views/AdminLogsPage.vue')
       }
     ]
   },
@@ -126,15 +131,23 @@ router.beforeEach(async (to, from, next) => {
 })
 
 // 5. 静默检查 Token 有效性（针对非保护路由，如直接刷新主页时同步前端状态）
+let lastTrackedPath = null;
+let lastTrackTime = 0;
+
 router.afterEach((to) => {
   const token = localStorage.getItem('authToken');
 
   // --- 记录 SPA 页面访问 ---
-  // 给后端发送一个简单的无内容请求，使后端的全局日志中间件能够记录这次“页面访问”
-  // 携带路径参数便于在日志中识别
-  fetch(`/api/track?path=${encodeURIComponent(to.fullPath)}`, {
-    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-  }).catch(() => {});
+  // 防抖/去重逻辑：如果 500ms 内跳转到同一个路由，则忽略，防止 Vue Router 内部机制或重定向导致发送两次请求
+  const now = Date.now();
+  if (to.fullPath !== lastTrackedPath || (now - lastTrackTime) > 500) {
+    lastTrackedPath = to.fullPath;
+    lastTrackTime = now;
+    
+    fetch(`/api/track?path=${encodeURIComponent(to.fullPath)}`, {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    }).catch(() => {});
+  }
 
   if (!to.meta.requiresAuth) {
     const token = localStorage.getItem('authToken')

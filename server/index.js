@@ -10,6 +10,7 @@ import { getAllObjectsFromFiles } from './utils.js';
 import { DATA_PATH } from './config.js';
 import { loginUser, verifyToken } from './auth.js';
 import rateLimit from 'express-rate-limit';
+import { UAParser } from 'ua-parser-js';
 
 const app = express();
 
@@ -92,11 +93,18 @@ app.use((req, res, next) => {
             }
         }
 
-        // Format: [ISO Date] IP [Country] METHOD URL STATUS DURATIONms "User-Agent" "Referer" [User: username]
-        const logLine = `[${timestamp}] ${clientIp} [${country}] ${method} ${displayUrl} ${status} ${duration}ms "${userAgent}" "${referer}" [User: ${username}]\n`;
+        // Parse User-Agent for better readability
+        const parser = new UAParser(userAgent);
+        const browser = parser.getBrowser().name || 'Unknown';
+        const os = parser.getOS().name || 'Unknown';
+        const device = parser.getDevice().type || 'desktop'; // If empty, it's usually desktop
+        const platformInfo = `${os}/${browser}/${device}`;
+
+        // Format: [ISO Date] IP [Country] METHOD URL STATUS DURATIONms [User: username] (PlatformInfo)
+        const logLine = `[${timestamp}] ${clientIp} [${country}] ${method} ${displayUrl} ${status} ${duration}ms [User: ${username}] (${platformInfo})\n`;
 
         // Output to console for quick docker logs debugging (Only if we aren't spamming)
-        console.log(`[Access] ${clientIp} [${country}] ${method} ${displayUrl} ${status} ${duration}ms [User: ${username}]`);
+        console.log(`[Access] ${clientIp} [${country}] ${method} ${displayUrl} ${status} ${duration}ms [User: ${username}] (${platformInfo})`);
 
         // Write to log file in data volume for convenient viewing
         if (fs.existsSync(logDir)) {
@@ -224,6 +232,28 @@ app.post('/api/login', loginLimiter, (req, res) => {
 
 app.get('/api/check-auth', verifyToken, (req, res) => {
     res.json({ success: true, user: req.user });
+});
+
+// Admin endpoint to read current access logs
+app.get('/api/admin/logs', verifyToken, (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Admin access required' });
+    }
+    
+    const timestamp = new Date().toISOString();
+    const monthStr = timestamp.substring(0, 7); 
+    const logFile = path.join(DATA_PATH, 'logs', `access-${monthStr}.log`);
+    
+    if (fs.existsSync(logFile)) {
+        fs.readFile(logFile, 'utf8', (err, data) => {
+            if (err) return res.status(500).send('Failed to read log file.');
+            res.header('Content-Type', 'text/plain');
+            res.send(data);
+        });
+    } else {
+        res.header('Content-Type', 'text/plain');
+        res.send("No access logs generated for this month yet.");
+    }
 });
 
 app.use('/api/objects', objectRoutes);
