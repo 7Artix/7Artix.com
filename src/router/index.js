@@ -144,15 +144,15 @@ router.afterEach((to) => {
     lastTrackedPath = to.fullPath;
     lastTrackTime = now;
     
-    // 使用 POST 请求（或者带随机时间戳的 GET），防止 Chrome 激进缓存 204 No Content 导致请求发不出去
+    // 使用 POST 请求发送埋点数据。
+    // 注意：不能使用 keepalive: true，因为 Chrome 严禁对需要发送预检请求（Preflight，比如带 Authorization 头的请求）的 fetch 使用 keepalive，这会直接导致请求在 Chrome 中被拦截并静默失败。
     fetch(`/api/track?path=${encodeURIComponent(to.fullPath)}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain',
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       },
-      body: 'ping', // 提供极小 body，防止部分中间件和浏览器对无 body 的 POST 异常拦截
-      keepalive: true // 告诉浏览器即使页面跳转/组件卸载也不要取消这个后台请求
+      body: 'ping'
     }).catch(() => {});
   }
 
