@@ -147,7 +147,12 @@ router.afterEach((to) => {
     // 使用 POST 请求（或者带随机时间戳的 GET），防止 Chrome 激进缓存 204 No Content 导致请求发不出去
     fetch(`/api/track?path=${encodeURIComponent(to.fullPath)}`, {
       method: 'POST',
-      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      headers: {
+        'Content-Type': 'text/plain',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      body: 'ping', // 提供极小 body，防止部分中间件和浏览器对无 body 的 POST 异常拦截
+      keepalive: true // 告诉浏览器即使页面跳转/组件卸载也不要取消这个后台请求
     }).catch(() => {});
   }
 

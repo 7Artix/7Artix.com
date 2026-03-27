@@ -44,7 +44,7 @@ jobs:
           password: ${{ secrets.CR_PAT }}
 
       - name: Build and push Backend
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.backend
@@ -55,7 +55,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
 
       - name: Build and push Frontend
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.frontend
