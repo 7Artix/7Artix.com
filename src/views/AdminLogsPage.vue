@@ -24,7 +24,12 @@ const fetchLogs = async () => {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     if (res.ok) {
-      logsContent.value = await res.text()
+      const rawText = await res.text()
+      // 将日志中的 UTC 时间正则替换为浏览器当前的本地时间（在中国访问就是东八区）
+      logsContent.value = rawText.replace(/\[(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)\]/g, (match, isoStr) => {
+        const date = new Date(isoStr)
+        return `[${date.toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-')}]`
+      })
       // 自动滚动到最底部
       nextTick(() => {
         if (logsContainer.value) {
